@@ -5,189 +5,141 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Treino de Matemática</title>
 <style>
-body{
-  font-family: Arial, sans-serif;
-  background:#f4f6f9;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-  margin:0;
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #f4f6f9;
+    margin: 0;
+    padding: 0;
 }
-.card{
-  background:white;
-  padding:40px;
-  border-radius:20px;
-  box-shadow:0 10px 25px rgba(0,0,0,0.1);
-  text-align:center;
-  width:420px;
+
+.container {
+    max-width: 500px;
+    margin: 60px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
 }
-h1{ margin-bottom:10px; }
-input[type="text"]{
-  padding:8px;
-  margin-bottom:15px;
-  width:80%;
-  font-size:16px;
-  text-align:center;
+
+h1 {
+    margin-bottom: 20px;
 }
-button{
-  padding:10px 20px;
-  margin:8px;
-  font-size:16px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
+
+input {
+    padding: 10px;
+    font-size: 18px;
+    width: 80%;
+    margin-bottom: 15px;
 }
-.primary{ background:#4CAF50; color:white; }
-.secondary{ background:#2196F3; color:white; }
-.outline{ background:#eee; }
-.question{
-  font-size:40px;
-  margin:20px 0;
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background-color: #2c7be5;
+    color: white;
 }
-.answer-input{
-  font-size:28px;
-  text-align:center;
-  width:120px;
-  padding:5px;
+
+button:hover {
+    background-color: #1a5fc4;
+}
+
+#feedback {
+    margin-top: 15px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.hidden {
+    display: none;
 }
 </style>
 </head>
 <body>
-<div class="card" id="app">
-  <h1>Treino de Matemática</h1>
-  <div id="menu">
-    <input type="text" id="playerName" placeholder="Nome do paciente" />
-    <br>
-    <button class="primary" onclick="startGame('soma')">Somas Iguais</button>
-    <button class="secondary" onclick="startGame('dobro')">Dobros (x2)</button>
-    <br>
-    <button class="outline" onclick="exportCSVProtected()">Exportar Resultados</button>
-  </div>
-  <div id="game" style="display:none;">
-    <div id="progress"></div>
-    <div class="question" id="question"></div>
-    <input type="number" class="answer-input" id="answer" autofocus onkeydown="if(event.key==='Enter'){submitAnswer()}">
-  </div>
-  <div id="result" style="display:none;"></div>
+
+<div class="container">
+    <h1>Treino de Matemática</h1>
+    
+    <div id="nomeBox">
+        <p>Digite seu nome para começar:</p>
+        <input type="text" id="nome" placeholder="Seu nome" />
+        <br>
+        <button onclick="iniciar()">Começar</button>
+    </div>
+
+    <div id="jogo" class="hidden">
+        <h2 id="pergunta"></h2>
+        <input type="number" id="resposta" />
+        <br>
+        <button onclick="verificar()">Responder</button>
+        <div id="feedback"></div>
+    </div>
 </div>
 
 <script>
 
-// 🔐 ALTERE A SENHA AQUI
-const EXPORT_PASSWORD = "M3str3d4m4tem4tica"; 
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby4NlnwJ-M1JFBX-Gx2nYAjwtQFONeIeU4useHS8IS-fCHB6tGduyxXK7c199AQ80FWHw/exec";
 
-let questions=[];
-let current=0;
-let errors=0;
-let startTime;
-let mode;
-let player="";
+let nomePaciente = "";
+let numero1, numero2;
+let inicioTempo;
 
-function generateQuestions(type){
-  const nums=[1,2,3,4,5,6,7,8,9];
-  nums.sort(()=>Math.random()-0.5);
-  return nums.map(n=>({
-    question: type==='soma'? `${n} + ${n}` : `${n} x 2`,
-    answer: type==='soma'? n+n : n*2
-  }));
+function iniciar() {
+    nomePaciente = document.getElementById("nome").value.trim();
+    if (!nomePaciente) {
+        alert("Digite seu nome.");
+        return;
+    }
+
+    document.getElementById("nomeBox").classList.add("hidden");
+    document.getElementById("jogo").classList.remove("hidden");
+
+    novaPergunta();
 }
 
-function startGame(selectedMode){
-  player=document.getElementById('playerName').value.trim();
-  if(player===""){
-    alert("Digite o nome do paciente antes de começar.");
-    return;
-  }
+function novaPergunta() {
+    numero1 = Math.floor(Math.random() * 50);
+    numero2 = Math.floor(Math.random() * 50);
 
-  mode=selectedMode;
-  questions=generateQuestions(mode);
-  current=0;
-  errors=0;
-  startTime=Date.now();
-  document.getElementById('menu').style.display='none';
-  document.getElementById('result').style.display='none';
-  document.getElementById('game').style.display='block';
-  showQuestion();
+    document.getElementById("pergunta").innerText = `${numero1} + ${numero2} = ?`;
+    document.getElementById("resposta").value = "";
+    document.getElementById("feedback").innerText = "";
+
+    inicioTempo = new Date().getTime();
 }
 
-function showQuestion(){
-  document.getElementById('progress').innerText=`${player} — Questão ${current+1} de 9`;
-  document.getElementById('question').innerText=questions[current].question + " = ?";
-  document.getElementById('answer').value='';
-  document.getElementById('answer').focus();
+function verificar() {
+    const respostaUsuario = parseInt(document.getElementById("resposta").value);
+    const correta = numero1 + numero2;
+    const fimTempo = new Date().getTime();
+    const tempoResposta = ((fimTempo - inicioTempo) / 1000).toFixed(2);
+
+    const acertou = respostaUsuario === correta;
+
+    document.getElementById("feedback").innerText = acertou ? "✅ Correto!" : `❌ Errado! A resposta era ${correta}`;
+
+    enviarResultado(numero1 + " + " + numero2, respostaUsuario, acertou, tempoResposta);
+
+    setTimeout(novaPergunta, 1500);
 }
 
-function submitAnswer(){
-  const input=parseInt(document.getElementById('answer').value);
-  if(input!==questions[current].answer){ errors++; }
-  current++;
-  if(current<questions.length){
-    showQuestion();
-  } else {
-    finishGame();
-  }
-}
-
-function finishGame(){
-  const totalTime=((Date.now()-startTime)/1000).toFixed(2);
-  const avgTime=(totalTime/9).toFixed(2);
-  const resultDiv=document.getElementById('result');
-  resultDiv.innerHTML=`<h2>Resultado</h2>
-    <p><strong>Paciente:</strong> ${player}</p>
-    <p>Modo: ${mode}</p>
-    <p>Tempo total: ${totalTime} segundos</p>
-    <p>Tempo médio: ${avgTime} segundos</p>
-    <p>Erros: ${errors}</p>
-    <button onclick="backToMenu()">Voltar</button>`;
-  document.getElementById('game').style.display='none';
-  resultDiv.style.display='block';
-  saveResult(totalTime,avgTime);
-}
-
-function backToMenu(){
-  document.getElementById('menu').style.display='block';
-  document.getElementById('result').style.display='none';
-}
-
-function saveResult(totalTime,avgTime){
-  const result={
-    date:new Date().toLocaleString(),
-    player:player,
-    mode:mode,
-    totalTime:totalTime,
-    avgTime:avgTime,
-    errors:errors
-  };
-  const stored=JSON.parse(localStorage.getItem('treinoResultados')||'[]');
-  stored.push(result);
-  localStorage.setItem('treinoResultados',JSON.stringify(stored));
-}
-
-function exportCSVProtected(){
-  const senha=prompt("Digite a senha para exportar os resultados:");
-  if(senha!==EXPORT_PASSWORD){
-    alert("Senha incorreta.");
-    return;
-  }
-  exportCSV();
-}
-
-function exportCSV(){
-  const data=JSON.parse(localStorage.getItem('treinoResultados')||'[]');
-  if(!data.length){ alert('Sem resultados ainda.'); return; }
-  let csv="Data,Paciente,Modo,Tempo Total (s),Tempo Médio (s),Erros\n";
-  data.forEach(r=>{
-    csv+=`${r.date},${r.player},${r.mode},${r.totalTime},${r.avgTime},${r.errors}\n`;
-  });
-  const blob=new Blob([csv],{type:'text/csv'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download='resultados_treino.csv';
-  a.click();
+function enviarResultado(pergunta, resposta, acertou, tempo) {
+    fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({
+            nome: nomePaciente,
+            pergunta: pergunta,
+            resposta: resposta,
+            correta: acertou,
+            tempo: tempo
+        })
+    }).catch(error => console.error("Erro ao enviar:", error));
 }
 
 </script>
+
 </body>
 </html>
