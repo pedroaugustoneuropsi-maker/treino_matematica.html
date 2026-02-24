@@ -1,220 +1,196 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Treino Matemático</title>
+<title>Treino</title>
 
 <style>
 body {
-    font-family: Arial, sans-serif;
-    text-align: center;
-    background-color: #f4f6f9;
-}
-
-.container {
-    max-width: 600px;
-    margin: 40px auto;
-    background: white;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin-top: 40px;
 }
 
 button {
-    padding: 8px 15px;
-    margin: 5px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    background-color: #2c7be5;
-    color: white;
+  padding: 10px 20px;
+  margin: 5px;
+  font-size: 16px;
+  cursor: pointer;
 }
 
-button:hover {
-    background-color: #1a5fc4;
+#question {
+  font-size: 32px;
+  margin: 20px;
 }
 
 input {
-    padding: 8px;
-    font-size: 16px;
+  font-size: 24px;
+  width: 120px;
+  text-align: center;
 }
 
-.hidden { display: none; }
+.hidden {
+  display: none;
+}
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<div id="menu">
+  <h2>Escolha o tipo de treino</h2>
 
-<h1>Treino de Matemática</h1>
-
-<div id="nomeBox">
-    <p>Digite seu nome:</p>
-    <input type="text" id="nome">
-    <br><br>
-    <button onclick="mostrarModos()">Continuar</button>
+  <button onclick="start('add')">n + n</button>
+  <button onclick="start('x2')">n x 2</button>
+  <button onclick="start('square')">n x n</button>
+  <button onclick="start('x5')">n x 5</button>
+  <button onclick="start('add_x2')">(n + n) e (n x 2)</button>
+  <button onclick="start('add_x2_square')">(n + n) e (n x 2) e (n x n)</button>
+  <button onclick="start('all')">(n + n) e (n x 2) e (n x n) e (n x 5)</button>
 </div>
 
-<div id="modos" class="hidden">
-    <h3>Escolha o treino:</h3>
-    <button onclick="iniciarTreino('a')">(a) 1+1 até 9+9</button>
-    <button onclick="iniciarTreino('b')">(b) n × 2</button>
-    <button onclick="iniciarTreino('c')">(c) n × n</button>
-    <button onclick="iniciarTreino('d')">(d) Tabuada do 5</button>
-    <button onclick="iniciarTreino('e')">(e) (a)+(b)</button>
-    <button onclick="iniciarTreino('f')">(f) (a)+(b)+(c)</button>
-    <button onclick="iniciarTreino('g')">(g) (a)+(b)+(c)+(d)</button>
+<div id="game" class="hidden">
+  <div id="question"></div>
+  <input type="number" id="answer" />
+  <br><br>
+  <button id="submitBtn" onclick="submitAnswer()">Responder</button>
 </div>
 
-<div id="jogo" class="hidden">
-    <h2 id="pergunta"></h2>
-    <input type="number" id="resposta">
-    <br><br>
-    <button onclick="verificar()">Responder</button>
-    <p id="feedback"></p>
-</div>
-
+<div id="final" class="hidden">
+  <h2>Treino Finalizado!</h2>
+  <button onclick="goMenu()">Voltar ao menu principal</button>
 </div>
 
 <script>
 
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzrKaaK1w5UbLKNRBJ9qwr45HupRSFB2E6ZqfS53lDHihZBzAzOhcI9ZYRQnrLhkHPndA/exec";
 
-let nomePaciente = "";
-let perguntas = [];
-let indice = 0;
-let inicioTempo = 0;
-let atual = null;
+let mode;
+let current = 0;
+let total = 10;
+let startTime;
+let correctAnswer;
+let blockSubmit = false;
 
-function mostrarModos() {
-    nomePaciente = document.getElementById("nome").value.trim();
-    if (!nomePaciente) {
-        alert("Digite seu nome.");
-        return;
-    }
+function start(selectedMode) {
+  mode = selectedMode;
+  current = 0;
 
-    document.getElementById("nomeBox").classList.add("hidden");
-    document.getElementById("modos").classList.remove("hidden");
+  document.getElementById("menu").classList.add("hidden");
+  document.getElementById("game").classList.remove("hidden");
+  document.getElementById("final").classList.add("hidden");
+
+  nextQuestion();
 }
 
-function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
+function randomNumber() {
+  return Math.floor(Math.random() * 9) + 1;
 }
 
-function gerarA() {
-    let arr = [];
-    for (let i = 1; i <= 9; i++) {
-        arr.push({ p: `${i}+${i}`, r: i + i });
-    }
-    return arr;
+function generateQuestion() {
+  let n1 = randomNumber();
+  let n2 = randomNumber();
+
+  let types = [];
+
+  if (mode === "add") types = ["add"];
+  if (mode === "x2") types = ["x2"];
+  if (mode === "square") types = ["square"];
+  if (mode === "x5") types = ["x5"];
+  if (mode === "add_x2") types = ["add","x2"];
+  if (mode === "add_x2_square") types = ["add","x2","square"];
+  if (mode === "all") types = ["add","x2","square","x5"];
+
+  let type = types[Math.floor(Math.random()*types.length)];
+
+  if (type === "add") {
+    correctAnswer = n1 + n2;
+    return `${n1} + ${n2}`;
+  }
+
+  if (type === "x2") {
+    correctAnswer = n1 * 2;
+    return `${n1} x 2`;
+  }
+
+  if (type === "square") {
+    correctAnswer = n1 * n1;
+    return `${n1} x ${n1}`;
+  }
+
+  if (type === "x5") {
+    correctAnswer = n1 * 5;
+    return `${n1} x 5`;
+  }
 }
 
-function gerarB() {
-    let arr = [];
-    for (let i = 1; i <= 9; i++) {
-        arr.push({ p: `${i}×2`, r: i * 2 });
-    }
-    return arr;
+function nextQuestion() {
+  if (current >= total) {
+    finish();
+    return;
+  }
+
+  blockSubmit = false;
+  document.getElementById("submitBtn").style.display = "inline-block";
+
+  let question = generateQuestion();
+  document.getElementById("question").innerText = question;
+  document.getElementById("answer").value = "";
+
+  startTime = Date.now();
+
+  setTimeout(() => {
+    document.getElementById("answer").focus();
+  }, 50);
+
+  current++;
 }
 
-function gerarC() {
-    let arr = [];
-    for (let i = 1; i <= 9; i++) {
-        arr.push({ p: `${i}×${i}`, r: i * i });
-    }
-    return arr;
+function submitAnswer() {
+
+  if (blockSubmit) return;
+
+  blockSubmit = true;
+
+  let answer = Number(document.getElementById("answer").value);
+  let endTime = Date.now();
+  let time = ((endTime - startTime)/1000).toFixed(2);
+
+  // converte ponto para vírgula
+  time = time.replace(".", ",");
+
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      questionNumber: current,
+      answer: answer,
+      correct: correctAnswer,
+      time: time
+    })
+  });
+
+  if (current >= total) {
+    document.getElementById("submitBtn").style.display = "none";
+  }
+
+  setTimeout(nextQuestion, 300);
 }
 
-function gerarD() {
-    let arr = [];
-    for (let i = 1; i <= 9; i++) {
-        arr.push({ p: `5×${i}`, r: 5 * i });
-    }
-    return arr;
+function finish() {
+  document.getElementById("game").classList.add("hidden");
+  document.getElementById("final").classList.remove("hidden");
 }
 
-function iniciarTreino(tipo) {
-
-    let A = gerarA();
-    let B = gerarB();
-    let C = gerarC();
-    let D = gerarD();
-
-    if (tipo === "a") perguntas = shuffle([...A, ...A]);
-    if (tipo === "b") perguntas = shuffle([...B, ...B]);
-    if (tipo === "c") perguntas = shuffle([...C, ...C]);
-    if (tipo === "d") perguntas = shuffle([...D, ...D]);
-
-    if (tipo === "e") perguntas = shuffle([...A, ...B]);
-    if (tipo === "f") perguntas = shuffle([...A, ...B, ...C]);
-    if (tipo === "g") perguntas = shuffle([...A, ...B, ...C, ...D]);
-
-    indice = 0;
-
-    document.getElementById("modos").classList.add("hidden");
-    document.getElementById("jogo").classList.remove("hidden");
-
-    novaPergunta();
+function goMenu() {
+  document.getElementById("final").classList.add("hidden");
+  document.getElementById("menu").classList.remove("hidden");
 }
 
-function novaPergunta() {
-
-    if (indice >= perguntas.length) {
-        document.getElementById("pergunta").innerText = "Treino finalizado!";
-        document.getElementById("feedback").innerText = "";
-        return;
-    }
-
-    atual = perguntas[indice];
-    document.getElementById("pergunta").innerText = atual.p + " = ?";
-    document.getElementById("resposta").value = "";
-    document.getElementById("feedback").innerText = "";
-
-    inicioTempo = Date.now();
-}
-
-function verificar() {
-
-    const resp = parseInt(document.getElementById("resposta").value);
-
-    if (isNaN(resp)) {
-        alert("Digite uma resposta.");
-        return;
-    }
-
-    const correta = atual.r;
-    const tempo = ((Date.now() - inicioTempo) / 1000).toFixed(2);
-    const acertou = resp === correta;
-
-    document.getElementById("feedback").innerText =
-        acertou ? "✅ Correto!" : `❌ Errado! Era ${correta}`;
-
-    enviarResultado(atual.p, resp, acertou, tempo);
-
-    indice++;
-
-    setTimeout(novaPergunta, 1000);
-}
-
-function enviarResultado(pergunta, resposta, acertou, tempo) {
-
-    fetch(SCRIPT_URL, {
-        method: "POST",
-        body: JSON.stringify({
-            nome: nomePaciente,
-            pergunta: pergunta,
-            resposta: resposta,
-            correta: acertou,
-            tempo: tempo
-        })
-    }).catch(error => console.error("Erro ao enviar:", error));
-}
+document.getElementById("answer").addEventListener("keydown", function(e){
+  if(e.key === "Enter"){
+    submitAnswer();
+  }
+});
 
 </script>
 
