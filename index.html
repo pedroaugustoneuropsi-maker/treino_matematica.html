@@ -12,42 +12,34 @@ body {
   background-color: #f4f6f8;
 }
 
-.menu button {
-  padding: 12px 22px;
+input {
+  padding: 8px;
+  font-size: 16px;
+  margin: 10px;
+}
+
+button {
+  padding: 10px 20px;
   margin: 6px;
   font-size: 16px;
-  border-radius: 8px;
+  border-radius: 6px;
   border: none;
-  background-color: #2c7be5;
-  color: white;
   cursor: pointer;
 }
 
-.menu button:hover {
-  background-color: #1a68d1;
+.primary {
+  background-color: #2c7be5;
+  color: white;
+}
+
+.success {
+  background-color: #28a745;
+  color: white;
 }
 
 #question {
   font-size: 36px;
   margin: 30px;
-}
-
-input {
-  font-size: 28px;
-  width: 140px;
-  text-align: center;
-  padding: 5px;
-}
-
-#submitBtn {
-  padding: 10px 20px;
-  margin-top: 15px;
-  font-size: 16px;
-  border-radius: 6px;
-  border: none;
-  background-color: #28a745;
-  color: white;
-  cursor: pointer;
 }
 
 .hidden {
@@ -58,39 +50,59 @@ input {
 
 <body>
 
-<div id="menu" class="menu">
-  <h2>Escolha o tipo de treino</h2>
-
-  <button onclick="start('add')">n + n</button>
-  <button onclick="start('x2')">n x 2</button>
-  <button onclick="start('square')">n x n</button>
-  <button onclick="start('x5')">n x 5</button>
-  <button onclick="start('add_x2')">(n + n) e (n x 2)</button>
-  <button onclick="start('add_x2_square')">(n + n) e (n x 2) e (n x n)</button>
-  <button onclick="start('all')">(n + n) e (n x 2) e (n x n) e (n x 5)</button>
+<!-- IDENTIFICAÇÃO -->
+<div id="login">
+  <h2>Identificação do Paciente</h2>
+  <input type="text" id="patientName" placeholder="Digite o nome do paciente">
+  <br>
+  <button class="primary" onclick="enterMenu()">Continuar</button>
 </div>
 
+<!-- MENU -->
+<div id="menu" class="hidden">
+  <h2>Escolha o tipo de treino</h2>
+
+  <button class="primary" onclick="start('add')">n + n</button>
+  <button class="primary" onclick="start('x2')">n x 2</button>
+  <button class="primary" onclick="start('square')">n x n</button>
+  <button class="primary" onclick="start('x5')">n x 5</button>
+  <button class="primary" onclick="start('add_x2')">(n + n) e (n x 2)</button>
+  <button class="primary" onclick="start('add_x2_square')">(n + n) e (n x 2) e (n x n)</button>
+  <button class="primary" onclick="start('all')">(n + n) e (n x 2) e (n x n) e (n x 5)</button>
+</div>
+
+<!-- TREINO -->
 <div id="game" class="hidden">
   <div id="question"></div>
   <input type="number" id="answer">
   <br>
-  <button id="submitBtn" onclick="submitAnswer()">Responder</button>
+  <button id="submitBtn" class="success" onclick="submitAnswer()">Responder</button>
 </div>
 
+<!-- FINAL -->
 <div id="final" class="hidden">
   <h2>Treino Finalizado!</h2>
-  <button onclick="goMenu()">Voltar ao menu principal</button>
+  <button class="primary" onclick="goMenu()">Voltar ao menu principal</button>
 </div>
 
 <script>
 
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzrKaaK1w5UbLKNRBJ9qwr45HupRSFB2E6ZqfS53lDHihZBzAzOhcI9ZYRQnrLhkHPndA/exec";
 
+let patient = "";
 let questions = [];
 let current = 0;
 let startTime = 0;
 let correctAnswer = 0;
 let blockSubmit = false;
+
+function enterMenu(){
+  patient = document.getElementById("patientName").value.trim();
+  if(patient === "") return;
+
+  document.getElementById("login").classList.add("hidden");
+  document.getElementById("menu").classList.remove("hidden");
+}
 
 function generateBlock(type){
   let block = [];
@@ -104,8 +116,8 @@ function generateBlock(type){
 }
 
 function shuffle(array){
-  for(let i = array.length - 1; i > 0; i--){
-    let j = Math.floor(Math.random() * (i + 1));
+  for(let i=array.length-1; i>0; i--){
+    let j = Math.floor(Math.random()*(i+1));
     let temp = array[i];
     array[i] = array[j];
     array[j] = temp;
@@ -167,6 +179,7 @@ function submitAnswer(){
     fetch(SCRIPT_URL, {
       method: "POST",
       body: JSON.stringify({
+        patient: patient,
         question: questions[current-1].q,
         givenAnswer: answer,
         correctAnswer: correctAnswer,
@@ -192,10 +205,12 @@ function goMenu(){
   document.getElementById("menu").classList.remove("hidden");
 }
 
+document.getElementById("patientName").addEventListener("keydown", function(e){
+  if(e.key === "Enter") enterMenu();
+});
+
 document.getElementById("answer").addEventListener("keydown", function(e){
-  if(e.key === "Enter"){
-    submitAnswer();
-  }
+  if(e.key === "Enter") submitAnswer();
 });
 
 </script>
