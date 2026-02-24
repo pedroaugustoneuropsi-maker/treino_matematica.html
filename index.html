@@ -60,8 +60,8 @@ input {
 <div id="modos" class="hidden">
     <h3>Escolha o treino:</h3>
     <button onclick="iniciarTreino('a')">(a) 1+1 até 9+9</button>
-    <button onclick="iniciarTreino('b')">(b) n x 2</button>
-    <button onclick="iniciarTreino('c')">(c) n x n</button>
+    <button onclick="iniciarTreino('b')">(b) n × 2</button>
+    <button onclick="iniciarTreino('c')">(c) n × n</button>
     <button onclick="iniciarTreino('d')">(d) Tabuada do 5</button>
     <button onclick="iniciarTreino('e')">(e) (a)+(b)</button>
     <button onclick="iniciarTreino('f')">(f) (a)+(b)+(c)</button>
@@ -85,48 +85,56 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzrKaaK1w5UbLKNRBJ9q
 let nomePaciente = "";
 let perguntas = [];
 let indice = 0;
-let inicioTempo;
-let atual;
+let inicioTempo = 0;
+let atual = null;
 
 function mostrarModos() {
     nomePaciente = document.getElementById("nome").value.trim();
-    if (!nomePaciente) return alert("Digite seu nome.");
+    if (!nomePaciente) {
+        alert("Digite seu nome.");
+        return;
+    }
+
     document.getElementById("nomeBox").classList.add("hidden");
     document.getElementById("modos").classList.remove("hidden");
 }
 
 function shuffle(array) {
-    return array.sort(() => Math.random() - 0.5);
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
 }
 
 function gerarA() {
     let arr = [];
-    for (let i=1;i<=9;i++) {
-        arr.push({p:`${i}+${i}`, r:i+i});
+    for (let i = 1; i <= 9; i++) {
+        arr.push({ p: `${i}+${i}`, r: i + i });
     }
     return arr;
 }
 
 function gerarB() {
     let arr = [];
-    for (let i=1;i<=9;i++) {
-        arr.push({p:`${i}×2`, r:i*2});
+    for (let i = 1; i <= 9; i++) {
+        arr.push({ p: `${i}×2`, r: i * 2 });
     }
     return arr;
 }
 
 function gerarC() {
     let arr = [];
-    for (let i=1;i<=9;i++) {
-        arr.push({p:`${i}×${i}`, r:i*i});
+    for (let i = 1; i <= 9; i++) {
+        arr.push({ p: `${i}×${i}`, r: i * i });
     }
     return arr;
 }
 
 function gerarD() {
     let arr = [];
-    for (let i=1;i<=9;i++) {
-        arr.push({p:`5×${i}`, r:5*i});
+    for (let i = 1; i <= 9; i++) {
+        arr.push({ p: `5×${i}`, r: 5 * i });
     }
     return arr;
 }
@@ -167,13 +175,21 @@ function novaPergunta() {
     document.getElementById("pergunta").innerText = atual.p + " = ?";
     document.getElementById("resposta").value = "";
     document.getElementById("feedback").innerText = "";
-    inicioTempo = new Date().getTime();
+
+    inicioTempo = Date.now();
 }
 
 function verificar() {
+
     const resp = parseInt(document.getElementById("resposta").value);
+
+    if (isNaN(resp)) {
+        alert("Digite uma resposta.");
+        return;
+    }
+
     const correta = atual.r;
-    const tempo = ((new Date().getTime() - inicioTempo)/1000).toFixed(2);
+    const tempo = ((Date.now() - inicioTempo) / 1000).toFixed(2);
     const acertou = resp === correta;
 
     document.getElementById("feedback").innerText =
@@ -182,11 +198,13 @@ function verificar() {
     enviarResultado(atual.p, resp, acertou, tempo);
 
     indice++;
+
     setTimeout(novaPergunta, 1000);
 }
 
 function enviarResultado(pergunta, resposta, acertou, tempo) {
-    fetch(SCRIPT_URL, {https:"https://script.google.com/macros/s/AKfycbzrKaaK1w5UbLKNRBJ9qwr45HupRSFB2E6ZqfS53lDHihZBzAzOhcI9ZYRQnrLhkHPndA/exec"
+
+    fetch(SCRIPT_URL, {
         method: "POST",
         body: JSON.stringify({
             nome: nomePaciente,
@@ -195,12 +213,10 @@ function enviarResultado(pergunta, resposta, acertou, tempo) {
             correta: acertou,
             tempo: tempo
         })
-    });
+    }).catch(error => console.error("Erro ao enviar:", error));
 }
 
 </script>
 
 </body>
 </html>
-
-
