@@ -80,7 +80,7 @@ input {
 
 <script>
 
-const SCRIPT_URL = "COLE_AQUI_SEU_LINK";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzrKaaK1w5UbLKNRBJ9qwr45HupRSFB2E6ZqfS53lDHihZBzAzOhcI9ZYRQnrLhkHPndA/exec";
 
 let nomePaciente = "";
 let perguntas = [];
@@ -186,7 +186,7 @@ function verificar() {
 }
 
 function enviarResultado(pergunta, resposta, acertou, tempo) {
-    fetch(SCRIPT_URL, {
+    fetch(SCRIPT_URL, {https:
         method: "POST",
         body: JSON.stringify({
             nome: nomePaciente,
@@ -202,3 +202,4 @@ function enviarResultado(pergunta, resposta, acertou, tempo) {
 
 </body>
 </html>
+
