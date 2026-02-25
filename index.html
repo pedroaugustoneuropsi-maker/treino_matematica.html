@@ -11,14 +11,10 @@ body {
   background: #f4f6f8;
 }
 
-h2 {
-  margin-top: 20px;
-}
-
 button {
   padding: 10px 18px;
   margin: 6px;
-  font-size: 15px;
+  font-size: 16px;
   border-radius: 6px;
   border: none;
   cursor: pointer;
@@ -31,13 +27,15 @@ button:hover {
 }
 
 input {
-  padding: 6px;
-  margin: 5px;
+  padding: 10px;
+  font-size: 26px;
+  width: 120px;
+  text-align: center;
 }
 
-.questao {
-  margin: 8px;
-  font-size: 18px;
+#pergunta {
+  font-size: 42px;
+  margin: 60px 0 20px 0;
 }
 </style>
 </head>
@@ -45,15 +43,13 @@ input {
 
 <h2>Treino de Matemática</h2>
 
-<!-- NOME PACIENTE -->
 <div>
   <input type="text" id="paciente" placeholder="Nome do paciente">
 </div>
 
 <hr>
 
-<!-- MENU -->
-<div>
+<div id="menu">
   <button onclick="iniciar(['mais'])">n + n</button>
   <button onclick="iniciar(['x2'])">n x 2</button>
   <button onclick="iniciar(['xn'])">n x n</button>
@@ -64,18 +60,15 @@ input {
   <button onclick="iniciar(['mais','x2','xn','x5'])">Todos</button>
 </div>
 
-<hr>
-
-<div id="quiz"></div>
-
-<button id="enviarBtn" style="display:none;" onclick="enviar()">Enviar</button>
+<div id="areaQuiz" style="display:none;">
+  <div id="pergunta"></div>
+  <input type="number" id="resposta" autocomplete="off">
+</div>
 
 <script>
 
 // ====== COLE SEU LINK AQUI ======
 const URL = "https://script.google.com/macros/s/AKfycbzrKaaK1w5UbLKNRBJ9qwr45HupRSFB2E6ZqfS53lDHihZBzAzOhcI9ZYRQnrLhkHPndA/exec";
-// exemplo:
-// const URL = "https://script.google.com/macros/s/AKfycbxxxxxxx/exec";
 // =================================
 
 
@@ -133,49 +126,71 @@ function gerarModulo(tipos) {
   return embaralhar(contas);
 }
 
-let questoesAtuais = [];
+
+// -------- FLUXO SEQUENCIAL AUTOMÁTICO --------
+
+let questoes = [];
+let indiceAtual = 0;
+let respostas = [];
 
 function iniciar(tipos) {
-  const quiz = document.getElementById("quiz");
-  quiz.innerHTML = "";
 
-  questoesAtuais = gerarModulo(tipos);
-
-  questoesAtuais.forEach((q, index) => {
-    const div = document.createElement("div");
-    div.className = "questao";
-    div.innerHTML = `
-      ${index + 1}) ${q.pergunta} =
-      <input type="number" id="resposta${index}">
-    `;
-    quiz.appendChild(div);
-  });
-
-  document.getElementById("enviarBtn").style.display = "inline-block";
-}
-
-
-// -------- ENVIO --------
-
-function enviar() {
   const nome = document.getElementById("paciente").value;
-
   if (!nome) {
     alert("Digite o nome do paciente.");
     return;
   }
 
-  const respostas = questoesAtuais.map((q, i) => {
-    const valor = document.getElementById(`resposta${i}`).value;
-    return {
-      pergunta: q.pergunta,
-      correta: q.resposta,
+  questoes = gerarModulo(tipos);
+  indiceAtual = 0;
+  respostas = [];
+
+  document.getElementById("menu").style.display = "none";
+  document.getElementById("areaQuiz").style.display = "block";
+
+  mostrarPergunta();
+}
+
+function mostrarPergunta() {
+  document.getElementById("pergunta").innerText =
+    questoes[indiceAtual].pergunta;
+
+  const campo = document.getElementById("resposta");
+  campo.value = "";
+  campo.focus();
+}
+
+
+// ENTER avança automaticamente
+document.getElementById("resposta").addEventListener("keydown", function(e) {
+
+  if (e.key === "Enter") {
+
+    const valor = this.value;
+
+    respostas.push({
+      pergunta: questoes[indiceAtual].pergunta,
+      correta: questoes[indiceAtual].resposta,
       respostaPaciente: valor
-    };
-  });
+    });
+
+    indiceAtual++;
+
+    if (indiceAtual < questoes.length) {
+      mostrarPergunta();
+    } else {
+      enviar();
+    }
+  }
+});
+
+
+// -------- ENVIO --------
+
+function enviar() {
 
   const dados = {
-    paciente: nome,
+    paciente: document.getElementById("paciente").value,
     dataHora: new Date().toLocaleString(),
     respostas: respostas
   };
@@ -189,7 +204,8 @@ function enviar() {
   })
   .then(res => res.text())
   .then(() => {
-    alert("Enviado com sucesso!");
+    alert("Finalizado e enviado.");
+    location.reload();
   })
   .catch(() => {
     alert("Erro ao enviar.");
