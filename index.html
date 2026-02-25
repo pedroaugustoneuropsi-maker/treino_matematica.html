@@ -2,216 +2,195 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Treino Matemática</title>
-
+<title>Treino de Matemática</title>
 <style>
 body {
-  font-family: Arial, sans-serif;
-  text-align: center;
-  background: #f4f6f8;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin-top: 100px;
+}
+
+h1 {
+    font-size: 32px;
+}
+
+input, button {
+    font-size: 22px;
+    padding: 10px;
+    margin-top: 20px;
 }
 
 button {
-  padding: 10px 18px;
-  margin: 6px;
-  font-size: 16px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  background: #2d6cdf;
-  color: white;
+    cursor: pointer;
 }
 
-button:hover {
-  background: #1f4fa8;
+.hidden {
+    display: none;
 }
 
-input {
-  padding: 10px;
-  font-size: 26px;
-  width: 120px;
-  text-align: center;
-}
-
-#pergunta {
-  font-size: 42px;
-  margin: 60px 0 20px 0;
+#feedback {
+    font-size: 24px;
+    margin-top: 20px;
 }
 </style>
 </head>
 <body>
 
-<h2>Treino de Matemática</h2>
-
-<div>
-  <input type="text" id="paciente" placeholder="Nome do paciente">
+<div id="home">
+    <h1>Treino de Matemática</h1>
+    <input type="text" id="nome" placeholder="Digite seu nome">
+    <br>
+    <button onclick="irParaMenu()">Entrar</button>
 </div>
 
-<hr>
+<div id="menu" class="hidden">
+    <h1>Treino de Matemática</h1>
+    <button onclick="iniciarTreino('soma')">n + n</button><br>
+    <button onclick="iniciarTreino('x2')">n x 2</button><br>
+    <button onclick="iniciarTreino('xx')">n x n</button><br>
+    <button onclick="iniciarTreino('x5')">n x 5</button><br><br>
 
-<div id="menu">
-  <button onclick="iniciar(['mais'])">n + n</button>
-  <button onclick="iniciar(['x2'])">n x 2</button>
-  <button onclick="iniciar(['xn'])">n x n</button>
-  <button onclick="iniciar(['x5'])">n x 5</button>
-  <br>
-  <button onclick="iniciar(['mais','x2'])">n+n e n×2</button>
-  <button onclick="iniciar(['mais','x2','xn'])">+ , x2 , xn</button>
-  <button onclick="iniciar(['mais','x2','xn','x5'])">Todos</button>
+    <button onclick="iniciarTreino('combo1')">(n + n) e (n x 2)</button><br>
+    <button onclick="iniciarTreino('combo2')">(n + n) e (n x 2) e (n x n)</button><br>
+    <button onclick="iniciarTreino('combo3')">(n + n) e (n x 2) e (n x n) e (n x 5)</button>
 </div>
 
-<div id="areaQuiz" style="display:none;">
-  <div id="pergunta"></div>
-  <input type="number" id="resposta" autocomplete="off">
+<div id="treino" class="hidden">
+    <div id="conta" style="font-size:40px;"></div>
+    <input type="number" id="resposta">
+    <br>
+    <button onclick="enviarResposta()">Enviar</button>
+    <div id="feedback"></div>
+</div>
+
+<div id="final" class="hidden">
+    <h1>Treino finalizado</h1>
+    <button onclick="voltarMenu()">Voltar ao menu principal</button>
 </div>
 
 <script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzrKaaK1w5UbLKNRBJ9qwr45HupRSFB2E6ZqfS53lDHihZBzAzOhcI9ZYRQnrLhkHPndA/exec";
 
-// ====== COLE SEU LINK AQUI ======
-const URL = "https://script.google.com/macros/s/AKfycbzrKaaK1w5UbLKNRBJ9qwr45HupRSFB2E6ZqfS53lDHihZBzAzOhcI9ZYRQnrLhkHPndA/exec";
-// =================================
-
-
-// -------- GERAÇÃO --------
-
-function gerarBase(tipo) {
-  const contas = [];
-
-  if (tipo === "mais") {
-    for (let i = 1; i <= 9; i++) {
-      contas.push({pergunta: `${i} + ${i}`, resposta: i + i});
-    }
-  }
-
-  if (tipo === "x2") {
-    for (let i = 1; i <= 9; i++) {
-      contas.push({pergunta: `${i} x 2`, resposta: i * 2});
-    }
-  }
-
-  if (tipo === "xn") {
-    for (let i = 1; i <= 9; i++) {
-      contas.push({pergunta: `${i} x ${i}`, resposta: i * i});
-    }
-  }
-
-  if (tipo === "x5") {
-    for (let i = 1; i <= 9; i++) {
-      contas.push({pergunta: `${i} x 5`, resposta: i * 5});
-    }
-  }
-
-  return contas;
-}
-
-function embaralhar(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-}
-
-function gerarModulo(tipos) {
-  let contas = [];
-
-  tipos.forEach(tipo => {
-    contas = contas.concat(gerarBase(tipo));
-  });
-
-  if (tipos.length === 1) {
-    contas = contas.concat(contas);
-  }
-
-  return embaralhar(contas);
-}
-
-
-// -------- FLUXO SEQUENCIAL AUTOMÁTICO --------
-
+let nomeAluno = "";
 let questoes = [];
-let indiceAtual = 0;
-let respostas = [];
+let indice = 0;
+let inicioQuestao;
+let inicioTotal;
+let resultados = [];
 
-function iniciar(tipos) {
+document.getElementById("nome").focus();
 
-  const nome = document.getElementById("paciente").value;
-  if (!nome) {
-    alert("Digite o nome do paciente.");
-    return;
-  }
-
-  questoes = gerarModulo(tipos);
-  indiceAtual = 0;
-  respostas = [];
-
-  document.getElementById("menu").style.display = "none";
-  document.getElementById("areaQuiz").style.display = "block";
-
-  mostrarPergunta();
-}
-
-function mostrarPergunta() {
-  document.getElementById("pergunta").innerText =
-    questoes[indiceAtual].pergunta;
-
-  const campo = document.getElementById("resposta");
-  campo.value = "";
-  campo.focus();
-}
-
-
-// ENTER avança automaticamente
-document.getElementById("resposta").addEventListener("keydown", function(e) {
-
-  if (e.key === "Enter") {
-
-    const valor = this.value;
-
-    respostas.push({
-      pergunta: questoes[indiceAtual].pergunta,
-      correta: questoes[indiceAtual].resposta,
-      respostaPaciente: valor
-    });
-
-    indiceAtual++;
-
-    if (indiceAtual < questoes.length) {
-      mostrarPergunta();
-    } else {
-      enviar();
+document.getElementById("resposta").addEventListener("keydown", function(e){
+    if(e.key === "Enter"){
+        enviarResposta();
     }
-  }
 });
 
-
-// -------- ENVIO --------
-
-function enviar() {
-
-  const dados = {
-    paciente: document.getElementById("paciente").value,
-    dataHora: new Date().toLocaleString(),
-    respostas: respostas
-  };
-
-  fetch(URL, {
-    method: "POST",
-    body: JSON.stringify(dados),
-    headers: {
-      "Content-Type": "application/json"
+function irParaMenu(){
+    nomeAluno = document.getElementById("nome").value.trim();
+    if(nomeAluno === ""){
+        alert("Digite seu nome.");
+        return;
     }
-  })
-  .then(res => res.text())
-  .then(() => {
-    alert("Finalizado e enviado.");
-    location.reload();
-  })
-  .catch(() => {
-    alert("Erro ao enviar.");
-  });
+    document.getElementById("home").classList.add("hidden");
+    document.getElementById("menu").classList.remove("hidden");
 }
 
+function gerarQuestoes(tipo){
+    let lista = [];
+
+    function soma(){ for(let i=1;i<=9;i++) lista.push({q:`${i} + ${i}`, r:i+i}); }
+    function x2(){ for(let i=1;i<=9;i++) lista.push({q:`${i} x 2`, r:i*2}); }
+    function xx(){ for(let i=1;i<=9;i++) lista.push({q:`${i} x ${i}`, r:i*i}); }
+    function x5(){ for(let i=1;i<=9;i++) lista.push({q:`${i} x 5`, r:i*5}); }
+
+    if(tipo==="soma"){ soma(); soma(); }
+    if(tipo==="x2"){ x2(); x2(); }
+    if(tipo==="xx"){ xx(); xx(); }
+    if(tipo==="x5"){ x5(); x5(); }
+
+    if(tipo==="combo1"){ soma(); x2(); }
+    if(tipo==="combo2"){ soma(); x2(); xx(); }
+    if(tipo==="combo3"){ soma(); x2(); xx(); x5(); }
+
+    return lista.sort(()=>Math.random()-0.5);
+}
+
+function iniciarTreino(tipo){
+    questoes = gerarQuestoes(tipo);
+    indice = 0;
+    resultados = [];
+    inicioTotal = Date.now();
+
+    document.getElementById("menu").classList.add("hidden");
+    document.getElementById("treino").classList.remove("hidden");
+
+    mostrarQuestao();
+}
+
+function mostrarQuestao(){
+    document.getElementById("feedback").innerText = "";
+    document.getElementById("resposta").value = "";
+    document.getElementById("resposta").focus();
+    document.getElementById("conta").innerText = questoes[indice].q;
+    inicioQuestao = Date.now();
+}
+
+function enviarResposta(){
+    let respostaInput = document.getElementById("resposta").value.trim();
+    if(respostaInput === ""){
+        alert("Você precisa responder algo.");
+        return;
+    }
+
+    let tempoQuestao = (Date.now() - inicioQuestao)/1000;
+    let tempoFormatado = tempoQuestao.toFixed(2).replace(".", ",");
+
+    let correta = Number(respostaInput) === questoes[indice].r;
+    let status = correta ? "certo" : "errado";
+
+    document.getElementById("feedback").innerText = 
+        correta ? "Correto!" : `Incorreto. A resposta era ${questoes[indice].r}`;
+
+    resultados.push({
+        nome: nomeAluno,
+        pergunta: questoes[indice].q,
+        resposta: respostaInput,
+        status: status,
+        tempo_item: tempoFormatado
+    });
+
+    indice++;
+
+    setTimeout(()=>{
+        if(indice < questoes.length){
+            mostrarQuestao();
+        } else {
+            finalizarTreino();
+        }
+    },1000);
+}
+
+function finalizarTreino(){
+    let tempoTotal = (Date.now() - inicioTotal)/1000;
+    let tempoTotalFormatado = tempoTotal.toFixed(2).replace(".", ",");
+
+    resultados.forEach(r => r.tempo_total = tempoTotalFormatado);
+
+    fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify(resultados),
+        headers: { "Content-Type": "application/json" }
+    });
+
+    document.getElementById("treino").classList.add("hidden");
+    document.getElementById("final").classList.remove("hidden");
+}
+
+function voltarMenu(){
+    document.getElementById("final").classList.add("hidden");
+    document.getElementById("menu").classList.remove("hidden");
+}
 </script>
 
 </body>
