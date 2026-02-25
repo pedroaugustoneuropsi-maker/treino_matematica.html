@@ -166,18 +166,17 @@ async function finalizarTreino(){
     resultados.forEach(r => r.tempo_total = tempoTotal);
 
     try {
-        let response = await fetch(SCRIPT_URL, {
+        await fetch(SCRIPT_URL, {
             method: "POST",
+            mode: "no-cors",
             body: JSON.stringify(resultados),
-            headers: { "Content-Type": "application/json" }
+            headers: {
+                "Content-Type": "text/plain"
+            }
         });
 
-        let texto = await response.text();
-        console.log("Resposta do script:", texto);
-
-        document.getElementById("statusEnvio").innerText = "Resultados enviados com sucesso.";
+        document.getElementById("statusEnvio").innerText = "Resultados enviados.";
     } catch (erro) {
-        console.error("Erro ao enviar:", erro);
         document.getElementById("statusEnvio").innerText = "Erro ao enviar resultados.";
     }
 
@@ -193,4 +192,3 @@ function voltarMenu(){
 
 </body>
 </html>
-
